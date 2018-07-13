@@ -1,0 +1,17 @@
+# Ignore everything, "unblacklist" directories and whitelist gitignore
+*
+
+### Git ###
+!.gitignore
+!.gitattributes
+
+### Edito Config ###
+!.editorconfig
+
+### Gradle ###
+!build.gradle
+!settings.gradle
+
+### Source Code ###
+!/src
+!/src/**/*
