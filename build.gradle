@@ -2,17 +2,24 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     ext {
-        kotlinVersion = "1.2.51"
-        springBootVersion = "2.0.3.RELEASE"
+        javaVersion = "1.8"
+        kotlinVersion = "1.2.60"
+        springBootVersion = "2.0.4.RELEASE"
+        rxKotlinVersion = "2.2.0"
+
+        assertJVersion = "3.10.0"
+        restAssuredVersion = "3.1.0"
+
+        h2Version = "1.4.197"
     }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
-        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}")
-        classpath("org.jetbrains.kotlin:kotlin-noarg:${kotlinVersion}")
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "org.jetbrains.kotlin:kotlin-allopen:$kotlinVersion"
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlinVersion"
     }
 }
 
@@ -30,24 +37,29 @@ repositories {
 }
 
 dependencies {
-    runtime("com.h2database:h2:1.4.197")
-    compile("org.springframework.boot:spring-boot-starter-web")
-    compile("org.springframework.boot:spring-boot-starter-data-jpa")
-    compile("com.fasterxml.jackson.module:jackson-module-kotlin")
-    compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    compile("org.jetbrains.kotlin:kotlin-reflect")
-    testCompile("org.springframework.boot:spring-boot-starter-test")
-    testCompile("org.assertj:assertj-core:3.10.0")
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "io.reactivex.rxjava2:rxkotlin:$rxKotlinVersion"
+
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.assertj:assertj-core:$assertJVersion"
+    testImplementation "io.rest-assured:rest-assured:$restAssuredVersion"
+
+    runtime "com.h2database:h2:$h2Version"
 }
 
 tasks.withType(JavaCompile) {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    def javaCompileVersion = JavaVersion.values().find { it.toString() == javaVersion }
+    sourceCompatibility = javaCompileVersion
+    targetCompatibility = javaCompileVersion
 }
 
 tasks.withType(KotlinCompile) {
     kotlinOptions {
         freeCompilerArgs = ["-Xjsr305=strict"]
-        jvmTarget = "1.8"
+        jvmTarget = javaVersion
     }
 }

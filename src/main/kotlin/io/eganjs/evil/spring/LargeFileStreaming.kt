@@ -1,79 +1,99 @@
 package io.eganjs.evil.spring
 
+import io.eganjs.evil.extensions.exhaust
+import io.eganjs.evil.spring.config.ServerPortWatcher
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.*
 import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.client.ResponseExtractor
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.InputStream
 import java.io.OutputStream
 
 @RestController
 @RequestMapping("large-file")
-class FileController(restTemplateBuilder: RestTemplateBuilder) {
+class LargeFileController(
+        restTemplateBuilder: RestTemplateBuilder,
+        serverPortWatcher: ServerPortWatcher
+) {
 
-    private val restTemplate = restTemplateBuilder
-            .rootUri("http://localhost:8080/large-file")
-            .requestFactory {
-                SimpleClientHttpRequestFactory().apply {
-                    setBufferRequestBody(false)
+    val restTemplate: RestTemplate by lazy {
+        serverPortWatcher.port
+                .map { port ->
+                    restTemplateBuilder
+                            .rootUri("http://localhost:$port/large-file")
+                            .requestFactory {
+                                SimpleClientHttpRequestFactory().apply {
+                                    setBufferRequestBody(false)
+                                }
+                            }
+                            .build()
                 }
-            }
-            .build()
+                .blockingGet()
+    }
+
+    @GetMapping("ping")
+    fun ping(): String = "pong"
 
     /**
      * Requires `spring.mvc.async.request-timeout` property to be set to a high value
      */
     @GetMapping
-    fun download(@RequestParam("bytes") bytes: String): ResponseEntity<StreamingResponseBody> {
+    fun download(@RequestParam("fileSize") fileSize: String): ResponseEntity<StreamingResponseBody> {
         val headers = HttpHeaders().apply {
             contentType = MediaType.TEXT_PLAIN
             setContentDispositionFormData("attachment", "file.txt")
         }
-        return ResponseEntity(createFileGenerator(bytes.toInt()), headers, HttpStatus.OK)
+        return ResponseEntity(createFileGenerator(fileSize.toLong()), headers, HttpStatus.OK)
     }
 
     /**
      * Requires using `RestTemplate.execute` to avoid loading response into memory
      */
     @GetMapping("virtual")
-    fun virtualDownload(@RequestParam("bytes") bytes: String): Long {
-        return restTemplate.execute(
-                "/?bytes={bytes}",
-                HttpMethod.GET,
-                null,
-                ResponseExtractor { response ->
-                    response.body.exhaust()
-                },
-                bytes
-        )!!
-    }
+    fun virtualDownload(@RequestParam("fileSize") fileSize: Long): Long =
+            downloadFile(fileSize) { byteStream -> byteStream.exhaust() }
 
     @PostMapping
-    fun upload(inputStream: InputStream) = inputStream.exhaust()
+    fun upload(file: InputStream): Long =
+            file.exhaust()
+
+    @PostMapping("virtual")
+    fun virtualUpload(byteStream: InputStream): Long =
+            uploadFile(byteStream)
 
     /**
      * Requires `SimpleClientHttpRequestFactory.bufferRequestBody` to be false to avoid loading request into memory
      */
-    @GetMapping("passthrough")
-    fun passthrough(@RequestParam("bytes") bytes: String): Long {
+    @GetMapping("transfer")
+    fun transfer(@RequestParam("fileSize") fileSize: Long): Long =
+            downloadFile(fileSize) { byteStream -> uploadFile(byteStream) }
+
+    private inline fun <T> downloadFile(
+            fileSize: Long,
+            crossinline responseBodyHandler: (InputStream) -> T
+    ): T {
         return restTemplate.execute(
-                "/?bytes={bytes}",
+                "/?fileSize={fileSize}",
                 HttpMethod.GET,
                 null,
                 ResponseExtractor { response ->
-                    restTemplate.postForEntity(
-                            "/",
-                            InputStreamResource(response.body),
-                            Long::class.java
-                    ).body
+                    responseBodyHandler(response.body)
                 },
-                bytes
+                fileSize
         )!!
     }
 
+    private fun uploadFile(byteStream: InputStream): Long {
+        return restTemplate.postForEntity(
+                "/",
+                InputStreamResource(byteStream),
+                Long::class.java
+        ).body!!
+    }
 
     companion object {
 
@@ -89,23 +109,17 @@ class FileController(restTemplateBuilder: RestTemplateBuilder) {
             Phasellus ut facilisis sem. Integer elit sem, euismod nec congue at, iaculis non nunc. Sed egestas pharetra luctus. Nunc diam est, sagittis non feugiat sit amet, faucibus sit amet ante. In sit amet lectus et ipsum aliquet ultrices. Curabitur mollis tempus orci quis euismod. Etiam ex felis, luctus gravida consectetur ultrices, vehicula sed augue.
             """.trimIndent()
 
-        private fun createFileGenerator(bytes: Int) = StreamingResponseBody { outputStream: OutputStream ->
-            generateSequence { loremIpsum.toByteArray().asSequence() }
-                    .flatMap { it }
-                    .take(bytes)
-                    .map(Byte::toInt)
-                    .forEach(outputStream::write)
-        }
+        private val loremIpsumBytes = loremIpsum.toByteArray()
 
-        private fun InputStream.exhaust(): Long {
-            var b = read()
-            var i: Long = 0
-            while (b != -1) {
-                b = read()
-                i++
-            }
-            return i
-        }
+        private fun createFileGenerator(fileSize: Long, source: ByteArray = loremIpsumBytes) =
+                StreamingResponseBody { outputStream: OutputStream ->
+                    (0 until fileSize)
+                            .asSequence()
+                            .map { it % source.size }
+                            .map(Long::toInt)
+                            .map(source::get)
+                            .map(Byte::toInt)
+                            .forEach(outputStream::write)
+                }
     }
 }
-
