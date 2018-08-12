@@ -15,6 +15,9 @@
 !build.gradle
 !settings.gradle
 
+### Readme ###
+!README.md
+
 ### Source Code ###
 !/src
 !/src/**/*
