@@ -5,8 +5,11 @@
 !.gitignore
 !.gitattributes
 
-### Edito Config ###
+### Editor Config ###
 !.editorconfig
+
+### Travis CI ###
+!.travis.yml
 
 ### Gradle ###
 !build.gradle
