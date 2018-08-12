@@ -4,9 +4,17 @@ import io.eganjs.evil.extensions.exhaust
 import io.eganjs.evil.spring.config.ServerPortWatcher
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.core.io.InputStreamResource
-import org.springframework.http.*
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.http.client.SimpleClientHttpRequestFactory
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.ResponseExtractor
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
@@ -16,8 +24,8 @@ import java.io.OutputStream
 @RestController
 @RequestMapping("large-file")
 class LargeFileController(
-        restTemplateBuilder: RestTemplateBuilder,
-        serverPortWatcher: ServerPortWatcher
+    restTemplateBuilder: RestTemplateBuilder,
+    serverPortWatcher: ServerPortWatcher
 ) {
 
     val restTemplate: RestTemplate by lazy {
@@ -73,8 +81,8 @@ class LargeFileController(
             downloadFile(fileSize) { byteStream -> uploadFile(byteStream) }
 
     private inline fun <T> downloadFile(
-            fileSize: Long,
-            crossinline responseBodyHandler: (InputStream) -> T
+        fileSize: Long,
+        crossinline responseBodyHandler: (InputStream) -> T
     ): T {
         return restTemplate.execute(
                 "/?fileSize={fileSize}",
