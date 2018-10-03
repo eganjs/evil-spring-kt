@@ -1,6 +1,6 @@
 package io.eganjs.evil.spring
 
-import io.eganjs.evil.extensions.KB
+import io.eganjs.evil.extensions.MB
 import io.eganjs.evil.extensions.exhaust
 import io.restassured.RestAssured.given
 import io.restassured.builder.RequestSpecBuilder
@@ -39,11 +39,11 @@ class LargeFileStreamingTest {
     }
 
     @Test
-    fun `when request download 1 KB file then file size is 1 KB`() {
-        val expected = 1.KB
+    fun `when request download 751 MB file then file size is 751 MB`() {
+        val expected = 751.MB
 
         val response = given(template())
-                .param("fileSize", 1.KB)
+                .param("fileSize", 751.MB)
                 .get()
 
         assertThat(response.statusCode)
@@ -58,10 +58,10 @@ class LargeFileStreamingTest {
     }
 
     @Test
-    fun `when upload 2 KB file then uploaded file size is 2 KB`() {
-        val expected = 2.KB
+    fun `when upload 752 MB file then uploaded file size is 752 MB`() {
+        val expected = 752.MB
 
-        val file = ByteArray(2.KB.toInt())
+        val file = ByteArray(752.MB.toInt())
         val response = given(template())
                 .body(file)
                 .post()
@@ -78,11 +78,11 @@ class LargeFileStreamingTest {
     }
 
     @Test
-    fun `when virtual download 3 KB file then file size downloaded by server is 3 KB`() {
-        val expected = 3.KB
+    fun `when virtual download 753 MB file then file size downloaded by server is 753 MB`() {
+        val expected = 753.MB
 
         val response = given(template())
-                .param("fileSize", 3.KB)
+                .param("fileSize", 753.MB)
                 .get("virtual")
 
         assertThat(response.statusCode)
@@ -97,10 +97,10 @@ class LargeFileStreamingTest {
     }
 
     @Test
-    fun `when virtual upload 4 KB file then file size uploaded by server is 4 KB`() {
-        val expected = 4.KB
+    fun `when virtual upload 754 MB file then file size uploaded by server is 754 MB`() {
+        val expected = 754.MB
 
-        val file = ByteArray(4.KB.toInt())
+        val file = ByteArray(754.MB.toInt())
         val response = given(template())
                 .body(file)
                 .post("virtual")
@@ -117,11 +117,11 @@ class LargeFileStreamingTest {
     }
 
     @Test
-    fun `when request 5 KB file transfer then file size transferred by server is 5 KB`() {
-        val expected = 5.KB
+    fun `when request 755 MB file transfer then file size transferred by server is 755 MB`() {
+        val expected = 755.MB
 
         val response = given(template())
-                .param("fileSize", 5.KB)
+                .param("fileSize", 755.MB)
                 .get("transfer")
 
         assertThat(response.statusCode)
