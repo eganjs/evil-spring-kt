@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 buildscript {
     ext {
         javaVersion = "1.8"
-        kotlinVersion = "1.2.60"
+        kotlinVersion = "1.2.71"
         springBootVersion = "2.0.4.RELEASE"
         rxKotlinVersion = "2.2.0"
 
